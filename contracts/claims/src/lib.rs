@@ -85,8 +85,8 @@ pub struct EvidenceItem {
 
 const CLAIMS: Symbol = symbol_short!("CLAIMS");
 const EVIDENCE: Symbol = symbol_short!("EVIDENCE");
-const EVIDENCE_BY_CLAIM: Symbol = symbol_short!("EVIDENCE_BY_CLAIM");
-const EVIDENCE_SEQ: Symbol = symbol_short!("EVIDENCE_SEQ");
+const EVIDENCE_BY_CLAIM: Symbol = symbol_short!("EV_BYCLM");
+const EVIDENCE_SEQ: Symbol = symbol_short!("EV_SEQ");
 const ADMIN: Symbol = symbol_short!("ADMIN");
 const GUARDIAN: Symbol = symbol_short!("GUARDIAN");
 const PAUSE_STATE: Symbol = symbol_short!("PAUSED");
@@ -323,17 +323,17 @@ impl ClaimsContract {
 
     pub fn get_claim_evidence_ids(env: Env, claim_id: u64) -> Result<Vec<u64>, ClaimError> {
         let claim = Self::load_claim_record(&env, claim_id)?;
-        let mut ids: Vec<u64> = Vec::new();
+        let mut ids: Vec<u64> = Vec::new(&env);
         for idx in 0..claim.evidence_count {
             let evidence_id: u64 = env.storage().persistent().get(&(EVIDENCE_BY_CLAIM, claim_id, idx)).unwrap();
-            ids.push(evidence_id);
+            ids.push_back(evidence_id);
         }
         Ok(ids)
     }
 
     pub fn get_claim_evidence(env: Env, caller: Address, claim_id: u64) -> Result<Vec<EvidenceItem>, ClaimError> {
         let claim = Self::load_claim_record(&env, claim_id)?;
-        let mut items: Vec<EvidenceItem> = Vec::new();
+        let mut items: Vec<EvidenceItem> = Vec::new(&env);
 
         for idx in 0..claim.evidence_count {
             let evidence_id: u64 = env.storage().persistent().get(&(EVIDENCE_BY_CLAIM, claim_id, idx)).unwrap();
@@ -341,7 +341,7 @@ impl ClaimsContract {
             if evidence.sensitive && !Self::is_claim_access_allowed(&env, &caller, &claim) {
                 continue;
             }
-            items.push(evidence);
+            items.push_back(evidence);
         }
 
         Ok(items)
